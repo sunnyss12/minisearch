@@ -81,7 +81,7 @@ void Document::computeWordFrequency()
 {
     //通过单例模式 获取分词器
     SegmentSingleton *singleton = SegmentSingleton::getInstance();
-    const MixSegment &segment = singleton->getSegment();
+    const Application &segment = singleton->getSegment();
     const set<string> &stopList = singleton->getStopList();
     vector<string> words;
 

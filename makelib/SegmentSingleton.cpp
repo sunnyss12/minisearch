@@ -7,7 +7,11 @@ SegmentSingleton *SegmentSingleton::pInstance_ = NULL;
 muduo::MutexLock SegmentSingleton::mutex_;
 
 SegmentSingleton::SegmentSingleton()
-: segment_("../data/jieba.dict.utf8", "../data/hmm_model.utf8")
+: segment_("../data/jieba.dict.utf8",
+           "../data/hmm_model.utf8",
+           "../data/user.dict.utf8",
+           "../data/idf.utf8",
+           "../data/stop_words.utf8")          
 {
 
 }
@@ -28,7 +32,7 @@ SegmentSingleton *SegmentSingleton::getInstance()
     return pInstance_;
 }
 
-const MixSegment &SegmentSingleton::getSegment() const
+const Application &SegmentSingleton::getSegment() const
 {
     return segment_;
 }
@@ -40,7 +44,7 @@ const std::set<std::string> &SegmentSingleton::getStopList() const
 
 void SegmentSingleton::readStopList()
 {
-    ReadFile readFile("../data/stopList.txt");
+    ReadFile readFile("../data/stop_words.utf8");
     if(!readFile)
     {
         LOG_FATAL << "stopList open failed.";

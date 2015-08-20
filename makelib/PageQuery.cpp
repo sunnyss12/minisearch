@@ -60,7 +60,7 @@ std::string PageQuery::queryPage(const std::string &word) const
 {
     //分词
     SegmentSingleton *singleton = SegmentSingleton::getInstance();
-    const MixSegment &segment = singleton->getSegment();
+    const Application &segment = singleton->getSegment();
     const set<string> &stopList = singleton->getStopList();
     vector<string> words;
     segment.cut(word, words);

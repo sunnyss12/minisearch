@@ -14,7 +14,7 @@ public:
     void readPageLibIndex(); //读取网页库索引
     void readInvertedIndex(); //读取倒排索引
 
-    std::string queryPage(const std::string &word) const; //查询网页
+    std::string queryPage(std::string &word)const ; //查询网页
 
     std::string getJsonResult(const std::vector<std::pair<int, double>> &result) const;
     Document getDocumentById(int docid) const;

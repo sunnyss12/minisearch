@@ -230,19 +230,12 @@ double Document::computeSimilarity(int docid, const std::vector<std::pair<std::s
     assert(w1.size() == w2.size());
     size_t len = w1.size();
     double module1 = 0.0;
-    double module2 = 0.0;
     for(const auto &w : w1)
     {
         module1 += (w*w);
     }
 
-    for(const auto &w : w2)
-    {
-        module2 += (w*w);
-    }
-
-    module1 = sqrt(module1);
-    module2 = sqrt(module2);
+    module1 = sqrt(module1);   //因为w2中的权重本来都是做了归一化处理的了，不需要再计算归一化了,而且如果再对w1做归一化处理，会导致所有文章的similarity的值相同
 
     double member = 0.0;
     for(size_t ix = 0; ix != len; ++ix)
@@ -250,7 +243,8 @@ double Document::computeSimilarity(int docid, const std::vector<std::pair<std::s
         member += w1[ix]*w2[ix];
     }
 
-    double similarity = member / (module1 * module2);
-    
+    double similarity = member / module1 ;
+   
+    LOG_INFO << "docId:" << docid <<" similarity:" << similarity;
     return similarity;
 }

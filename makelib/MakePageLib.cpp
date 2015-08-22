@@ -1,5 +1,6 @@
 #include "MakePageLib.h"
 #include "ReadFile.h"
+#include "gbk2utf_8.h"
 #include <muduo/base/Logging.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -92,16 +93,43 @@ void MakePageLib::processFile(const std::string &filename)
     doc += integerToString(docid);
     doc += "</docid>";
 
-    std::string title = readFile.readLineAsString();
+    std::string title;
+    MY_LANGTRAN::CLang lang;
+    char* utfStr = NULL;
+    int ret = -1;
+    do
+    {
+        title = readFile.readLineAsString();
+        if(title == "")
+            return;
+        ret = lang.gbk2utf8(&utfStr,title.c_str());
+    }while(title == "\r\n" || title == "\n" || ret == -1);
     doc += "<title>";
+    title = utfStr;
+    lang.destroy(&utfStr);
     doc += title;
     doc += "</title>";
 
     std::string content;
-    std::string tmp;
-    while((tmp = readFile.readLineAsString()) != "")
+    std::string line;
+    std::string str_upper("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    size_t pos;
+    while((line = readFile.readLineAsString()) != "")
     {
-        content += tmp;
+        if(line == "\r\n" || line == "\n")
+            continue;
+        ret = lang.gbk2utf8(&utfStr,line.c_str());
+        if(ret == -1)
+            continue;
+        line = utfStr;
+        lang.destroy(&utfStr);
+        pos = 0;
+        while( (pos = line.find_first_of(str_upper,pos)) != std::string::npos)
+        {
+            line[pos] = line[pos] + 'a' - 'A';
+            pos++;
+        }
+        content += line;
         //content += "\n";
     }
 

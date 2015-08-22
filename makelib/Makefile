@@ -7,7 +7,8 @@ INC=-I ~/mycode/muduo/build/release-install/include
 LINKS=-lmuduo_net -lmuduo_base -lpthread -ljsoncpp -L ~/mycode/muduo/build/release-install/lib
 BIN=$@
 all:$(BINALL)
-makepagelib.exe:makelib.o MakePageLib.o RobustIO.o ReadFile.o TruncFile.o
+makepagelib.exe:makelib.o MakePageLib.o RobustIO.o ReadFile.o TruncFile.o \
+	gbk2utf_8.o
 	$(CC) $(CFLAGS) $^ -o $(BIN) $(LINKS)
 page_unique.exe:unique_page.o RobustIO.o ReadFile.o TruncFile.o \
 	Document.o PageUnique.o SegmentSingleton.o InvertedIndex.o

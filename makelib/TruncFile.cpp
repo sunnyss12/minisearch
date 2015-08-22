@@ -71,7 +71,7 @@ void TruncFile::writeString(const std::string &s)
 void TruncFile::writeStringLine(const std::string &s)
 {
     writenBytes(s.c_str(), s.size());
-    writenBytes("\n", strlen("\n"));
+    writenBytes("\r\n", strlen("\r\n"));
 }
 
 

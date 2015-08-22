@@ -85,23 +85,23 @@ void Document::computeWordFrequency()
     const set<string> &stopList = singleton->getStopList();
     vector<string> words;
 
-    std::unordered_map<std::string, int> &dfOfDocument = singleton->getDfOfDocument();  //全局DF,全局词与词频
+    std::unordered_map<std::string, int> &dfOfDocument = singleton->getDfOfDocument();  //全局DF,全局词与共有多少文档含有该词
 
     //分词
     segment.cut(content_, words);
-    LOG_DEBUG << "docid :" << docid_ << " words size : " << words.size();
+    LOG_INFO << "docid :" << docid_ << " words size : " << words.size();
     //统计词频
     for(const string &w : words)
     {
         if(!stopList.count(w)) //不是停用词
         {
-            wordFrequency_[w]++; //自身的
+            wordFrequency_[w]++; //自身的词与词频
         }
     }
 
     for(const auto &w : wordFrequency_)
     {
-        dfOfDocument[w.first]++;
+        dfOfDocument[w.first]++;  //词和有多少文档出现该词
     }
 }
 
@@ -172,16 +172,16 @@ void Document::computeWordWeight()
         assert(iter != dfOfDocument.end());
         assert(iter->second > 0);
 
-        int tf = w.second;
-        int df = iter->second;
+        int tf = w.second;     //词的频率
+        int df = iter->second; //df:词在多少文档出现过
         assert(N >= df);
         double weight = tf * log(N / static_cast<double>(df));
         assert(weight >= 0);
         //wordHeight_[w.first] = weight;
-        auto ret = wordWeight_.insert(make_pair(w.first, weight));
+        auto ret = wordWeight_.insert(make_pair(w.first, weight));  //词和权重
         assert(ret.second); (void)ret;
 
-        printf("[ %d %d %lf ]", tf, df, weight);
+        //printf("[ %d %d %lf ]", tf, df, weight);
     }
 }
 
@@ -206,14 +206,14 @@ void Document::addWeightToInvertedIndex(InvertedIndex &index) const
 {
     for(auto &w : wordWeight_) //pair<string, double>
     {
-        index.addWeightItem(w.first, docid_, w.second);
+        index.addWeightItem(w.first, docid_, w.second);  //词，docid,词权重
     }
 }
 
 double Document::computeSimilarity(int docid, const std::vector<std::pair<std::string, double>> &vec, const InvertedIndex &index)
 {
-    vector<double> w1; //将vec中的double抽取出来
-    vector<double> w2; //根据本doc生成的向量
+    vector<double> w1; //将vec中的double抽取出来,表示所有查找词的权重
+    vector<double> w2; //根据本doc生成的向量，表示所有查找词在文档为docid的权重
 
     for(const auto &w : vec)
     {

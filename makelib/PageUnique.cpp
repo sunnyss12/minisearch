@@ -77,7 +77,7 @@ void PageUnique::computeFrequency()
     for(auto &d : documents_)
     {
         d.computeWordFrequency();
-        //d.clearContent();  //不再需要正文部分
+        d.clearContent();  //不再需要正文部分
     }
 
     muduo::Timestamp endTime(muduo::Timestamp::now());

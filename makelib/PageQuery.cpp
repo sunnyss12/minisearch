@@ -70,7 +70,7 @@ std::string PageQuery::queryPage(const std::string &word) const
     string single_Word = *querySets.begin();
 
     //计算TF_IDF生成向量
-    vector<pair<string, double>> weightVec;
+    vector<pair<string, double>> weightVec; //所有的查找词和权重
     for(const auto &w : querySets)
     {
         if(!stopList.count(w))
@@ -88,15 +88,16 @@ std::string PageQuery::queryPage(const std::string &word) const
     }
 
     //查找docset
-    set<int> docSet;
+    set<int> docSet;   //把查找词所在的docId都放到docSet
     for(const auto &w : weightVec)
     {
         set<int> s = wordWeightIndex_.getDocIdSet(w.first);
         docSet.insert(s.begin(), s.end());
     }
 
+
     //计算相似度 docid -> sim
-    vector<pair<int, double>> similarityResult; //相似度计算结果
+    vector<pair<int, double>> similarityResult; //相似度计算结果:docId和相似度
     for(const auto &w : docSet)
     {
         double similarity = 0.0;
@@ -110,7 +111,7 @@ std::string PageQuery::queryPage(const std::string &word) const
         }
         else
         {
-            similarity = Document::computeSimilarity(w, weightVec, wordWeightIndex_);
+            similarity = Document::computeSimilarity(w, weightVec, wordWeightIndex_);  //计算查找词与文档id为w的相似度: w为docId，weightVec为查找词各词的权重,wordWeightIndex为所有倒排索引,即inverted.index的内容
         }
          
         similarityResult.push_back(make_pair(w, similarity));

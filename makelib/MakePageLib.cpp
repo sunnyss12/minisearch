@@ -142,7 +142,7 @@ void MakePageLib::processFile(const std::string &filename)
 
     //写入偏移信息  docid offset length
     char text[100] = {0};
-    snprintf(text, sizeof text, "%d %ld %u", docid, pagelib_.seek(), doc.size());
+    snprintf(text, sizeof text, "%d %ld %lu", docid, pagelib_.seek(), doc.size());
     index_.writeStringLine(text);
 
     //写入pagelib

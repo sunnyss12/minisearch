@@ -16,6 +16,7 @@ public:
     void readDocuments();  //根据索引，依次读取文章
 
     void computeFrequency(); //每篇文章计算词频
+    void computeWordWeight();
     void computeTopK();  //每篇文章计算topK
 
     void unique();

@@ -26,7 +26,7 @@ void PageQuery::readPageLibIndex()
     while((item = rf.readLineAsString()) != "")
     {
         //%d %ld %u
-        if(sscanf(item.c_str(), "%d %ld %u", &docid, &offset, &len) != 3)
+        if(sscanf(item.c_str(), "%d %ld %lu", &docid, &offset, &len) != 3)
         {
             LOG_ERROR << "index format error";
         }

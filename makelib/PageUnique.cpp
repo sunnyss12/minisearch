@@ -1,8 +1,10 @@
 #include "PageUnique.h"
 #include "ReadFile.h"
 #include "TruncFile.h"
+#include "SegmentSingleton.h"
 #include <muduo/base/Logging.h>
 #include <muduo/base/Timestamp.h>
+#include <unordered_map>
 using namespace std;
 
 PageUnique::PageUnique(std::string indexPath)
@@ -22,6 +24,8 @@ void PageUnique::readIndex()
     LOG_INFO << "开始读取索引";
     muduo::Timestamp beginTime(muduo::Timestamp::now());
 
+    int docNum = 0;
+
     string item;
     int docid;
     long offset;
@@ -29,14 +33,19 @@ void PageUnique::readIndex()
     while((item = rf.readLineAsString()) != "")
     {
         //%d %ld %u
-        if(sscanf(item.c_str(), "%d %ld %u", &docid, &offset, &len) != 3)
+        if(sscanf(item.c_str(), "%d %ld %lu", &docid, &offset, &len) != 3)
         {
             LOG_ERROR << "index format error";
         }
         auto ret = index_.insert(
             make_pair(docid, make_pair(offset, len)));
         assert(ret.second); (void)ret;
+
+        docNum++;
     }
+
+    //更新文档的数目
+    SegmentSingleton::getInstance()->getNumOfDocument() = docNum;
 
     muduo::Timestamp endTime(muduo::Timestamp::now());
     LOG_INFO << "读取索引完毕，花费 " << muduo::timeDifference(endTime, beginTime) << " s";
@@ -84,6 +93,17 @@ void PageUnique::computeFrequency()
     LOG_INFO << "词频计算完毕，花费 " << muduo::timeDifference(endTime, beginTime) << " s";
 }
 
+void PageUnique::computeWordWeight()
+{
+    LOG_INFO << "开始计算词的权重";
+    muduo::Timestamp beginTime(muduo::Timestamp::now());
+    for(auto & d : documents_)
+    {
+        d.computeWordWeight();
+    }
+    muduo::Timestamp endTime(muduo::Timestamp::now());
+    LOG_INFO << "词权重计算完毕，花费" << muduo::timeDifference(endTime, beginTime) << " s";
+}
 
 void PageUnique::computeTopK()
 {
@@ -105,19 +125,40 @@ void PageUnique::unique()
     LOG_INFO << "开始网页去重";
     muduo::Timestamp beginTime(muduo::Timestamp::now());
 
-    bit_.resize(documents_.size(), true);
-
-    for(size_t ix = 0; ix != documents_.size()-1; ++ix)
+    std::unordered_map<uint64_t,vector<pair<int,uint64_t> > > simhashMap; //key, docid, simhash
+    pair<int,uint64_t> docSimhash;          //存储docId和simhash
+    uint16_t key1,key2,key3,key4;
+    for(auto& d: documents_)
     {
-        if(bit_[ix] == false)
-            continue;
-        //ix位置处的doc 与 [ix+1, size)
-        for(size_t iy = ix+1; iy != documents_.size(); ++iy)
+        docSimhash.first = d.getDocId();
+        docSimhash.second = d.computeSimhash();
+
+        key1 = docSimhash.second & 0xFFFF;
+        simhashMap[key1].push_back(docSimhash);
+        key2 = (docSimhash.second >> 16) & 0xFFFF;
+        simhashMap[key2].push_back(docSimhash);
+        key3 = (docSimhash.second >> 32) & 0xFFFF;
+        simhashMap[key3].push_back(docSimhash);
+        key4 = (docSimhash.second >> 48) & 0xFFFF;
+        simhashMap[key4].push_back(docSimhash);
+    }
+
+    bit_.resize(documents_.size(), true);
+    for (auto &m : simhashMap)
+    {
+        vector<pair<int,uint64_t> >& vec = m.second;
+        for(size_t ix = 0; ix != vec.size()-1; ++ix)
         {
-            if(bit_[iy] == false)
-                continue; //网页已经被删除，则不必比较
-            if(documents_[ix] == documents_[iy])
-                bit_[iy] = false;
+            if(bit_[vec[ix].first] == false)
+                continue;
+            //m[ix].first处的doc 与 [ix+1,size)
+            for(size_t iy = ix+1; iy != vec.size(); ++iy)
+            {
+                if(bit_[vec[iy].first] == false)
+                    continue;
+                if(Simhash::Simhasher::isEqual(vec[ix].second,vec[iy].second))
+                    bit_[vec[iy].first] = false;
+            }
         }
     }
 
@@ -145,7 +186,7 @@ void PageUnique::saveToPageLib()
             continue;
 
         char tmp[100] = {0};
-        snprintf(tmp, sizeof tmp, "%d %ld %u",
+        snprintf(tmp, sizeof tmp, "%d %ld %lu",
             documents_[ix].getDocId(),
             pagelibFile.seek(),
             documents_[ix].getText().size());

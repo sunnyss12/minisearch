@@ -11,18 +11,20 @@ makepagelib.exe:makelib.o MakePageLib.o RobustIO.o ReadFile.o TruncFile.o \
 	gbk2utf_8.o
 	$(CC) $(CFLAGS) $^ -o $(BIN) $(LINKS)
 page_unique.exe:unique_page.o RobustIO.o ReadFile.o TruncFile.o \
-	Document.o PageUnique.o SegmentSingleton.o InvertedIndex.o
+	Document.o PageUnique.o SegmentSingleton.o InvertedIndex.o \
+	Simhasher.o
 	$(CC) $(CFLAGS) $^ -o $(BIN) $(LINKS)
 make_inverted_index.exe:make_inverted_index.o RobustIO.o ReadFile.o \
 	TruncFile.o Document.o SegmentSingleton.o InvertedIndex.o \
-	MakeInvertedIndex.o
+	MakeInvertedIndex.o Simhasher.o
 	$(CC) $(CFLAGS) $^ -o $(BIN) $(LINKS)
 query.exe:make_query.o RobustIO.o ReadFile.o TruncFile.o \
-	Document.o SegmentSingleton.o InvertedIndex.o PageQuery.o
+	Document.o SegmentSingleton.o InvertedIndex.o PageQuery.o \
+	Simhasher.o
 	$(CC) $(CFLAGS) $^ -o $(BIN) $(LINKS)
 run_query.exe:run_server.o RobustIO.o ReadFile.o TruncFile.o \
 	Document.o SegmentSingleton.o InvertedIndex.o PageQuery.o \
-	QueryServer.o
+	QueryServer.o Simhasher.o
 	$(CC) $(CFLAGS) $^ -o $(BIN) $(LINKS)
 %.o:%.cpp
 	$(CC) $(CFLAGS) -c $< -o $@ $(STAND) $(INC)

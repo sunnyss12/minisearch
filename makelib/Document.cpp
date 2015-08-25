@@ -10,10 +10,10 @@ using namespace std;
 class CompWordItem //用于优先级队列
 {
     typedef Document::WordItem WordItem;
-public:
+    public:
     bool operator() (const WordItem &w1, const WordItem &w2) const
     {
-        return w1.second < w2.second;
+        return w1.second > w2.second;
     }
 };
 
@@ -38,7 +38,7 @@ void Document::setText(std::string text)
     size_t docIdBegin = text.find("<docid>");
     size_t docIdEnd = text.find("</docid>");
     assert(docIdBegin != string::npos &&
-           docIdEnd != string::npos);
+            docIdEnd != string::npos);
     size_t tagLen = strlen("<docid>");
     string docid_ = text.substr(docIdBegin + tagLen, docIdEnd - docIdBegin - tagLen);
     int docid = ::atoi(docid_.c_str());
@@ -48,7 +48,7 @@ void Document::setText(std::string text)
     size_t titleBegin = text.find("<title>");
     size_t titleEnd = text.find("</title>");
     assert(titleBegin != string::npos &&
-           titleEnd != string::npos); 
+            titleEnd != string::npos); 
     tagLen = strlen("<title>");
     string title = text.substr(titleBegin + tagLen, titleEnd - titleBegin - tagLen);
     setTitle(title);
@@ -57,7 +57,7 @@ void Document::setText(std::string text)
     size_t contentBegin = text.find("<content>");
     size_t contentEnd = text.find("</content>");
     assert(contentBegin != string::npos &&
-           contentEnd != string::npos); 
+            contentEnd != string::npos); 
     tagLen = strlen("<content>");
     string content = text.substr(contentBegin + tagLen, contentEnd - contentBegin - tagLen);
     setContent(content);
@@ -108,28 +108,33 @@ void Document::computeWordFrequency()
 //计算topK
 void Document::extractTopK()
 {
-    priority_queue<WordItem, vector<WordItem>, CompWordItem> topQueue;
-    for(const WordItem &w : wordFrequency_)
+    priority_queue<WordItem, vector<WordItem>, CompWordItem> topQueue;  //最小堆
+    for(const WordItem &w : wordWeight_)
     {
-        topQueue.push(w);
-    }
-
-    LOG_DEBUG << "docid : " << docid_ << " topQueue size : " << topQueue.size();
-
-    //取出topK的单词
-    for(int i = 0; i != kTopWord; ++i)
-    {
-        if(!topQueue.empty())
+        if(topQueue.size() < kTopWord)
+            topQueue.push(w);
+        else
         {
-            WordItem w = topQueue.top();
-            topQueue.pop();
-            topK_.insert(std::move(w.first));
+            if(topQueue.top().second < w.second)
+            {
+                topQueue.pop();
+                topQueue.push(w);
+            }
         }
     }
+    for(size_t i = 0; i < kTopWord; ++i)
+    {
+        topK_.push_back(topQueue.top());
+        topQueue.pop();
+    }
 
-    LOG_DEBUG << "docid : " << docid_ << " topK_ size : " << topK_.size(); 
+    LOG_INFO << "docid : " << docid_ << " topK_ size : " << topK_.size(); 
 }
 
+uint64_t Document::computeSimhash()
+{
+    return simhasher_.make(topK_);
+}
 bool operator==(const Document &d1, const Document &d2)
 {
     size_t len1 = d1.topK_.size();
@@ -138,10 +143,13 @@ bool operator==(const Document &d1, const Document &d2)
 
     //求交集
     set<string> intersection;
-    for(const string &s : d1.topK_)
+    for(const auto& w1 : d1.topK_)
     {
-        if(d2.topK_.count(s))
-            intersection.insert(s);
+        for(const auto& w2 : d2.topK_)
+        {
+            if(w1.first == w2.first)
+                intersection.insert(w1.first);
+        }
     }
 
     size_t len_intersection = intersection.size();
@@ -181,7 +189,7 @@ void Document::computeWordWeight()
         auto ret = wordWeight_.insert(make_pair(w.first, weight));  //词和权重
         assert(ret.second); (void)ret;
 
-        //printf("[ %d %d %lf ]", tf, df, weight);
+        printf("[ %d %d %lf ]", tf, df, weight);
     }
 }
 
@@ -235,16 +243,16 @@ double Document::computeSimilarity(int docid, const std::vector<std::pair<std::s
         module1 += (w*w);
     }
 
-    module1 = sqrt(module1);   //因为w2中的权重本来都是做了归一化处理的了，不需要再计算归一化了,而且如果再对w1做归一化处理，会导致所有文章的similarity的值相同
-
+    module1 = sqrt(module1);   
     double member = 0.0;
     for(size_t ix = 0; ix != len; ++ix)
     {
         member += w1[ix]*w2[ix];
     }
 
-    double similarity = member / module1 ;
-   
+    double similarity = member / module1 ;   //原版本中还计算了module2，要对w2做归一化处理。计算similarity时除以了module2。这是错误的。因为w2中的权重本来都是做了归一化处理的了，不需要再计算归一化了；而且如果非要像上版本那样做归一化处理，其实是错误的。验证方法：假设输入两个查询词，两个查询词的权重向量为<a1,a2>,并且第二个查询词在所有文档中都不存在，假设文档A的两个查询词权重为<b1,0>,文档B的两个查询词权重为<c1,0>，那么如果再对<b1,0>和<c1,0>做归一化处理，那么文档A的相似度为a1*b1/sqrt(a1*a1+a2*a2)/b1=a1/sqrt(a1*a2+a2*a2)，文档B的相似度也是这个值，显然是不对的。
+
+
     LOG_INFO << "docId:" << docid <<" similarity:" << similarity;
     return similarity;
 }

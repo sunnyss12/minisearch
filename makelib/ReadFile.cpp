@@ -31,8 +31,8 @@ off_t getFileSize(int fd)
 
 ReadFile::ReadFile(const std::string &path)
 :   fd_(openReadFile(path)),
-    robustIO_(fd_),
-    filesize_(getFileSize(fd_))
+    filesize_(getFileSize(fd_)),
+    robustIO_(fd_)
 {
 }
 

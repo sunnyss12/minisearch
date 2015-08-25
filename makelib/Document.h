@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include "Simhasher.h"
 
 class InvertedIndex;
 
@@ -13,7 +14,7 @@ class Document //copyable
     friend bool operator==(const Document &d1, const Document &d2);
     friend bool operator!=(const Document &d1, const Document &d2);
 public:
-    typedef std::pair<std::string, int> WordItem;
+    typedef std::pair<std::string, double> WordItem;
     typedef std::map<std::string, int> WordFrequency;
     typedef std::map<std::string, double> WordHeight;
 
@@ -48,6 +49,8 @@ public:
     //计算向量与本文本的相似度 static函数
     static double computeSimilarity(int docid, const std::vector<std::pair<std::string, double>> &vec, const InvertedIndex &index);
 
+    uint64_t computeSimhash();
+
 private:
     int docid_;
     std::string title_;
@@ -55,11 +58,11 @@ private:
     std::string text_;
 
     WordFrequency wordFrequency_; //单词词频
-    std::set<std::string> topK_; //存放词频最高的K个单词
+    std::vector<WordItem> topK_; //存放词频最高的K个单词及其权重
 
     WordHeight wordWeight_; //单词权重 && 归一化权重
 
-
+    Simhash::Simhasher simhasher_;
     static const int kTopWord = 10;
 };
 

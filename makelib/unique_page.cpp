@@ -25,6 +25,7 @@ int main(int argc, char const *argv[])
     pageUnique.readDocuments();
 
     pageUnique.computeFrequency();
+    pageUnique.computeWordWeight();
     pageUnique.computeTopK();
 
     pageUnique.unique();

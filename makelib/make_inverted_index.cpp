@@ -1,16 +1,14 @@
 #include "MakeInvertedIndex.h"
-
+#include <muduo/base/Logging.h>
 
 int main(int argc, char const *argv[])
 {
+    muduo::Logger::setLogLevel(muduo::Logger::DEBUG);
+    
     MakeInvertedIndex foo;
     foo.readPageLibIndex();
-    foo.readDocuments();
-    foo.computeFrequency();
-    foo.computeWeight();
-    foo.normalizeWordWeight();
-    foo.addWeightToIndex();
-
+    foo.computeWordFrequency();
+    foo.computeWordWeightIndex();
     foo.saveToDisk();
 
     return 0;

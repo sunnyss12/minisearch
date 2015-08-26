@@ -85,9 +85,13 @@ void InvertedIndex::saveToDisk() const
     LOG_INFO << "Begin save InvertedIndex to Disk";
     muduo::Timestamp beginTime(muduo::Timestamp::now());
 
+    int size = index_.size();
+    int num = 0;
     //foo 12 0.004 34 0.034
     for(const auto &w : index_) // w: pair<string, map>
     {
+        num ++;
+        LOG_DEBUG << "共"<<size<<"个词，现在是"<<num<<"个";
         string item = w.first; //foo
         for(const auto &ww : w.second) // ww: pair<int, double>
         {

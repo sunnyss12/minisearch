@@ -43,7 +43,7 @@ void MakeInvertedIndex::readPageLibIndex()
     muduo::Timestamp endTime(muduo::Timestamp::now());
     LOG_INFO << "读取索引完毕，花费 " << muduo::timeDifference(endTime, beginTime) << " s";
 } 
-void MakeInvertedIndex::readDocuments()
+void MakeInvertedIndex::computeWordFrequency() //读pagelib,计算频率
 {
     ReadFile rf("../data/pagelib2.xml");
     if(!rf)
@@ -51,7 +51,7 @@ void MakeInvertedIndex::readDocuments()
         LOG_FATAL << "open pagelib failed.";
     }
 
-    LOG_INFO << "开始读取pagelib";
+    LOG_INFO << "开始读取pagelib,并对每篇文章分词，并计算分词的词频";
     muduo::Timestamp beginTime(muduo::Timestamp::now());
 
     //遍历索引
@@ -63,65 +63,33 @@ void MakeInvertedIndex::readDocuments()
         string text = rf.readnBytesAsString(len);
         Document document;
         document.setText(std::move(text));
+        document.computeWordFrequency();
+        document.clearContent();
         documents_.push_back(std::move(document));
     }
 
     muduo::Timestamp endTime(muduo::Timestamp::now());
-    LOG_INFO << "pagelib读取完毕，花费 " << muduo::timeDifference(endTime, beginTime) << " s";
+    LOG_INFO << "pagelib读取完毕，分词词频计算完毕，花费 " << muduo::timeDifference(endTime, beginTime) << " s";
 
-}  
+}
 
-void MakeInvertedIndex::computeFrequency()
-{
-    LOG_INFO << "开始计算词频";
-    muduo::Timestamp beginTime(muduo::Timestamp::now());
-    for(auto &d : documents_)
-    {
-        d.computeWordFrequency();
-        //d.clearContent();  //不再需要正文部分
-    }
-
-    muduo::Timestamp endTime(muduo::Timestamp::now());
-    LOG_INFO << "词频计算完毕，花费 " << muduo::timeDifference(endTime, beginTime) << " s";
-} 
-void MakeInvertedIndex::computeWeight()
+void MakeInvertedIndex::computeWordWeightIndex()  //计算频率，并进行归一化，并把所有文档的归一化数据统一放到weightIndex_
 {
     LOG_INFO << "开始计算权重";
     muduo::Timestamp beginTime(muduo::Timestamp::now());
     for(auto &d : documents_)
     {
+        LOG_DEBUG << "docId:" << d.getDocId();
         d.computeWordWeight();
+        d.clearWordFrequency();
+        d.normalizeWordWeight();
+        d.addWeightToInvertedIndex(weightIndex_);
+        d.clearWordWeight();
     }
 
     muduo::Timestamp endTime(muduo::Timestamp::now());
     LOG_INFO << "权重计算完毕，花费 " << muduo::timeDifference(endTime, beginTime) << " s";
 } 
-void MakeInvertedIndex::normalizeWordWeight()
-{
-    LOG_INFO << "开始归一化";
-    muduo::Timestamp beginTime(muduo::Timestamp::now());
-    for(auto &d : documents_)
-    {
-        d.normalizeWordWeight();
-    }
-
-    muduo::Timestamp endTime(muduo::Timestamp::now());
-    LOG_INFO << "归一化计算完毕，花费 " << muduo::timeDifference(endTime, beginTime) << " s";
-} 
-
-void MakeInvertedIndex::addWeightToIndex()
-{
-    LOG_INFO << "建立倒排索引";
-    muduo::Timestamp beginTime(muduo::Timestamp::now());
-    //addWeightToInvertedIndex
-    for(const auto &d : documents_)
-    {
-        d.addWeightToInvertedIndex(weightIndex_);
-    }
-
-    muduo::Timestamp endTime(muduo::Timestamp::now());
-    LOG_INFO << "建立倒排索引完毕，花费 " << muduo::timeDifference(endTime, beginTime) << " s";
-}
 
 void MakeInvertedIndex::saveToDisk()
 {

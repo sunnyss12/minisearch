@@ -1,11 +1,13 @@
 #include "PageQuery.h"
 #include "SegmentSingleton.h"
+#include <muduo/base/Logging.h>
 #include <string>
 #include <iostream>
 using namespace std;
 
 int main(int argc, char const *argv[])
 {
+    muduo::Logger::setLogLevel(muduo::Logger::DEBUG);
 
     SegmentSingleton::getInstance();
 

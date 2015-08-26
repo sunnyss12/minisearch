@@ -104,7 +104,10 @@ ssize_t RobustIO::readLine(char *usrbuf, size_t maxlen)
             break; 
     }
     *bufp = '\0';
-    return i+1; //返回读取的字节数,因为i从0算起需要加1 
+    if( i == maxlen-1)  //已经加了1
+        return i;
+    else
+        return i+1;   //i表示遇到\n退出，这时i表示index，应该加1才表示读取的字节数.
 }
 
 ssize_t RobustIO::writen(int fd, const void *buf, size_t count)

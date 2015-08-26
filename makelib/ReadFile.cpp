@@ -23,7 +23,6 @@ off_t getFileSize(int fd)
     {
         LOG_ERROR <<"fstat failed";
     }
-    LOG_INFO<<"filesize:"<<buf.st_size;
     return buf.st_size;
 
 }
@@ -87,7 +86,7 @@ std::string ReadFile::readLineAsString()
 {
     std::string result = "";
 
-    char tmp[1024];
+    char tmp[1024] = {0};
     const size_t kMaxLen = sizeof(tmp);
     while(1)
     {

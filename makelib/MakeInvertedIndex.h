@@ -10,14 +10,8 @@ class MakeInvertedIndex : boost::noncopyable
 {
 public:
     void readPageLibIndex(); //读取网页库索引
-    void readDocuments();  //根据索引，依次读取文章
-
-    void computeFrequency(); //每篇文章计算词频
-    void computeWeight(); //每篇文章计算权重
-    void normalizeWordWeight(); //每篇文章进行归一化
-
-    void addWeightToIndex(); //将每篇文档计算的权重放入倒排索引
-
+    void computeWordFrequency();  //根据索引，依次读取文章,并对每篇文章分词，然后计算每篇文章分词的词频
+    void computeWordWeightIndex(); //计算每篇文章的分词和词频计算权重，并计算归一化处理，并把归一后的词频都放到倒排索引
     void saveToDisk(); //倒排索引保存
 private:
     std::map<int, std::pair<long, size_t> > index_;

@@ -19,6 +19,7 @@ public:
     typedef std::map<std::string, double> WordHeight;
 
     Document() :docid_(-1) {};
+    Document(Document&& obj);
     void setDocId(int docid);
     void setTitle(std::string title);
     void setContent(std::string content);
@@ -45,6 +46,7 @@ public:
     //clear 节约内存
     void clearContent();
     void clearWordFrequency();
+    void clearWordWeight();
 
     //计算向量与本文本的相似度 static函数
     static double computeSimilarity(int docid, const std::vector<std::pair<std::string, double>> &vec, const InvertedIndex &index);

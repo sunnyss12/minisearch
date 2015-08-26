@@ -16,6 +16,16 @@ class CompWordItem //用于优先级队列
         return w1.second > w2.second;
     }
 };
+Document::Document(Document&& doc)
+{
+    setDocId(doc.docid_);
+    setTitle(doc.title_);
+    setContent(doc.content_);
+    text_ = std::move(doc.text_);
+    wordFrequency_ = std::move(doc.wordFrequency_);
+    topK_ = std::move(doc.topK_);
+    wordWeight_ = std::move(doc.wordWeight_);
+}
 
 void Document::setDocId(int docid)
 {
@@ -68,12 +78,19 @@ void Document::setText(std::string text)
 
 void Document::clearContent()
 {
-    content_ = "";
+    string().swap(content_);
 }
 
 void Document::clearWordFrequency()
 {
-    wordFrequency_.clear();
+    map<string,int>().swap(wordFrequency_);
+    //map<string,int> tmp(std::move(wordFrequency_));
+}
+
+void Document::clearWordWeight()
+{
+    map<string,double>().swap(wordWeight_);
+    //map<string,double> tmp(std::move(wordWeight_));
 }
 
 //计算词频
@@ -89,7 +106,7 @@ void Document::computeWordFrequency()
 
     //分词
     segment.cut(content_, words);
-    LOG_INFO << "docid :" << docid_ << " words size : " << words.size();
+    LOG_DEBUG << "docid :" << docid_ << " words size : " << words.size();
     //统计词频
     for(const string &w : words)
     {
@@ -122,13 +139,11 @@ void Document::extractTopK()
             }
         }
     }
-    for(size_t i = 0; i < kTopWord; ++i)
+    while(topQueue.size()>0)   //有可能topQueue的size小于kTopWord，所以显示topQueue的size不能用kTopWord比较
     {
         topK_.push_back(topQueue.top());
         topQueue.pop();
     }
-
-    LOG_INFO << "docid : " << docid_ << " topK_ size : " << topK_.size(); 
 }
 
 uint64_t Document::computeSimhash()
@@ -189,7 +204,7 @@ void Document::computeWordWeight()
         auto ret = wordWeight_.insert(make_pair(w.first, weight));  //词和权重
         assert(ret.second); (void)ret;
 
-        printf("[ %d %d %lf ]", tf, df, weight);
+        //printf("[ %d %d %lf ]", tf, df, weight);
     }
 }
 
@@ -253,6 +268,6 @@ double Document::computeSimilarity(int docid, const std::vector<std::pair<std::s
     double similarity = member / module1 ;   //原版本中还计算了module2，要对w2做归一化处理。计算similarity时除以了module2。这是错误的。因为w2中的权重本来都是做了归一化处理的了，不需要再计算归一化了；而且如果非要像上版本那样做归一化处理，其实是错误的。验证方法：假设输入两个查询词，两个查询词的权重向量为<a1,a2>,并且第二个查询词在所有文档中都不存在，假设文档A的两个查询词权重为<b1,0>,文档B的两个查询词权重为<c1,0>，那么如果再对<b1,0>和<c1,0>做归一化处理，那么文档A的相似度为a1*b1/sqrt(a1*a1+a2*a2)/b1=a1/sqrt(a1*a2+a2*a2)，文档B的相似度也是这个值，显然是不对的。
 
 
-    LOG_INFO << "docId:" << docid <<" similarity:" << similarity;
+    LOG_DEBUG << "docId:" << docid <<" similarity:" << similarity;
     return similarity;
 }

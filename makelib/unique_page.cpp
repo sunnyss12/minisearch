@@ -17,17 +17,13 @@ InitSegment initSegment;
 
 int main(int argc, char const *argv[])
 {
-    //Logger::setLogLevel(Logger::DEBUG);
+    Logger::setLogLevel(Logger::DEBUG);
 
     PageUnique pageUnique("../data/page.index");
 
     pageUnique.readIndex();
-    pageUnique.readDocuments();
-
-    pageUnique.computeFrequency();
-    pageUnique.computeWordWeight();
-    pageUnique.computeTopK();
-
+    pageUnique.computeWordFrequency();
+    pageUnique.computeWordWeightTopK();
     pageUnique.unique();
     pageUnique.saveToPageLib();
 
